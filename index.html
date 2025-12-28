@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Time Ledger</title>
+  <style>
+    :root{
+      --bg:#fff;
+      --fg:#0b0b0b;
+      --muted: rgba(11,11,11,.58);
+      --muted2: rgba(11,11,11,.42);
+      --line: rgba(11,11,11,.10);
+      --line2: rgba(11,11,11,.06);
+      --card: rgba(11,11,11,.02);
+      --r: 14px;
+
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      -webkit-text-size-adjust:100%;
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family:var(--sans);
+      overflow:hidden;
+      letter-spacing:.1px;
+    }
+
+    .app{
+      height:100vh;
+    }
+
+    @supports (height: 100svh){
+      .app{ height:100svh; }
+    }
+
+    @supports (height: 100svh){
+      .app{ height:100svh; }
+    }
+
+    .app{
+      max-width:980px;
+      margin:0 auto;
+      padding:10px 10px 9px;
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+    header{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      padding:2px 2px 5px;
+      border-bottom:1px solid var(--line2);
+      flex:0 0 auto;
+    }
+    .brand{ font-weight:780; font-size:14px; letter-spacing:.35px; }
+    .now{
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space:nowrap;
+    }
+
+    main{
+      flex:1 1 auto;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+      overflow:hidden;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      background:linear-gradient(180deg, var(--card), transparent 85%);
+      padding:8px;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:5px;
+    }
+    .h{
+      font-size:11px;
+      font-weight:790;
+      letter-spacing:.45px;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    .status{
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted2);
+      white-space:nowrap;
+      user-select:none;
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      min-width:0;
+    }
+    .nowrap{ flex-wrap:nowrap; }
+
+    .field{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:4px 7px;
+      border:1px solid var(--line);
+      border-radius:11px;
+      background:#fff;
+      min-width:0;
+    }
+    .field input{
+      border:0;
+      outline:none;
+      background:transparent;
+      padding:0;
+      margin:0;
+      color:var(--fg);
+      font-size:16px;
+      line-height:1;
+      min-width:0;
+      font-family:var(--mono);
+      font-variant-numeric: tabular-nums;
+      text-align:center;
+    }
+
+    .wMin{ width:56px; }
+    .wTiny{ width:36px; }
+    .wDayMonth{ width:50px; }
+    .wYear{ width:70px; }
+    .wTime{ width:54px; }
+    .wHours{ width:52px; }
+
+    .unit{
+      font-family:var(--mono);
+      font-size:11.2px;
+      color:var(--muted);
+      white-space:nowrap;
+      user-select:none;
+    }
+    .tag{
+      font-family:var(--sans);
+      font-size:11.2px;
+      color:var(--muted);
+      white-space:nowrap;
+      user-select:none;
+      letter-spacing:.1px;
+    }
+
+    button{
+      font:inherit;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--fg);
+      border-radius:11px;
+      padding:5px 7px;
+      font-size:12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    button:active{ transform: translateY(1px); }
+
+    button.mini{ padding:4px 6px; font-size:11.5px; border-radius:10px; }
+
+    .field:has(input:focus){
+      border-color: rgba(11,11,11,.22);
+      box-shadow:0 0 0 3px rgba(11,11,11,.06);
+    }
+
+    .out{
+      margin-top:5px;
+      border-top:1px solid var(--line2);
+      padding-top:5px;
+      display:grid;
+      gap:3px;
+      min-width:0;
+    }
+    .labelRow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:baseline;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .labelRow.wrap{ white-space:normal; overflow:visible; }
+    .labelRow.wrap .k{ white-space:normal; overflow-wrap:anywhere; }
+    .labelRow.wrap .k#saveDays{ text-align:right; }
+
+    .k{ font-size:11px; color:var(--muted); font-family:var(--mono); }
+    .big{
+      font-family:var(--mono);
+      font-variant-numeric: tabular-nums;
+      font-size:18px;
+      font-weight:860;
+      letter-spacing:.35px;
+      line-height:1.02;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .small{
+      font-family:var(--mono);
+      font-variant-numeric: tabular-nums;
+      font-size:11px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    #saveHint{ margin-top:4px; }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:6px;
+      min-width:0;
+      margin-top:2px;
+    }
+    .stat{
+      border:1px solid var(--line2);
+      border-radius:12px;
+      background:#fff;
+      padding:6px 7px;
+      overflow:hidden;
+      min-width:0;
+    }
+    .stat .t{
+      font-size:10.5px;
+      color:var(--muted);
+      font-family:var(--mono);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .stat .n{
+      margin-top:3px;
+      font-family:var(--mono);
+      font-variant-numeric: tabular-nums;
+      font-weight:860;
+      font-size:13.5px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height:1.05;
+    }
+
+    @media (max-width: 410px){
+      .wMin{ width:52px; }
+      .wTiny{ width:34px; }
+      .wYear{ width:66px; }
+      .wTime{ width:52px; }
+      .wDayMonth{ width:48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">Time Ledger</div>
+      <div class="now" id="nowClock">—</div>
+    </header>
+
+    <main>
+      <!-- 1) DATE -->
+      <section class="card">
+        <div class="top">
+          <div class="h">Date</div>
+          <div class="status" id="dateStatus"></div>
+        </div>
+
+        <div class="row">
+          <div class="field" title="Day"><input id="dd" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="DD" /></div>
+          <div class="field" title="Month"><input id="mm" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="MM" /></div>
+          <div class="field" title="Year"><input id="yyyy" class="wYear" inputmode="numeric" maxlength="4" placeholder="YYYY" /></div>
+          <div class="field" title="Time"><input id="hhmm" class="wTime" inputmode="numeric" placeholder="HH:MM" /></div>
+
+          <button type="button" class="mini" id="btnToday">Today</button>
+          <button type="button" class="mini" id="btnNow">Now</button>
+          <button type="button" class="mini" id="btnNextWeek" title="Same weekday, +7 days">Next wk</button>
+          <button type="button" class="mini" id="btnNextMonth" title="Same day next month">Next mo</button>
+          <button type="button" class="mini" id="btnNextMon" title="Next Monday">Next Mon</button>
+          <button type="button" class="mini" id="btnFirstMon" title="First Monday of next month">1st Mon</button>
+        </div>
+
+        <div class="out" aria-live="polite">
+          <div class="labelRow">
+            <span class="k" id="dateLead">—</span>
+            <span class="k" id="dateStamp">—</span>
+          </div>
+          <div class="big" id="dateBig">—</div>
+          <div class="small" id="dateSmall">—</div>
+        </div>
+      </section>
+
+      <!-- 2) TIME INTERVAL -->
+      <section class="card">
+        <div class="top">
+          <div class="h">Time Interval</div>
+          <div class="status" id="intStatus"></div>
+        </div>
+
+        <div class="row nowrap" style="gap:5px;">
+          <span class="tag">From</span>
+          <div class="field"><input id="fdd" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="DD" /></div>
+          <div class="field"><input id="fmm" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="MM" /></div>
+          <div class="field"><input id="fyyyy" class="wYear" inputmode="numeric" maxlength="4" placeholder="YYYY" /></div>
+          <div class="field"><input id="fhhmm" class="wTime" inputmode="numeric" placeholder="HH:MM" /></div>
+        </div>
+
+        <div class="row nowrap" style="gap:5px; margin-top:5px;">
+          <span class="tag">To</span>
+          <div class="field"><input id="tdd" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="DD" /></div>
+          <div class="field"><input id="tmm" class="wDayMonth" inputmode="numeric" maxlength="2" placeholder="MM" /></div>
+          <div class="field"><input id="tyyyy" class="wYear" inputmode="numeric" maxlength="4" placeholder="YYYY" /></div>
+          <div class="field"><input id="thhmm" class="wTime" inputmode="numeric" placeholder="HH:MM" /></div>
+
+          <button type="button" id="btnIntSwap">Swap</button>
+        </div>
+
+        <div class="out" aria-live="polite">
+          <div class="labelRow">
+            <span class="k" id="intLead">—</span>
+            <span class="k" id="intStamp">—</span>
+          </div>
+          <div class="big" id="intBig">—</div>
+          <div class="small" id="intSmall">—</div>
+        </div>
+      </section>
+
+      <!-- 3) TIME SAVINGS -->
+      <section class="card">
+        <div class="top">
+          <div class="h">Time Savings</div>
+          <div class="status" id="saveStatus"></div>
+        </div>
+
+        <div class="row nowrap">
+          <span class="tag">Every day</span>
+
+          <div class="field" title="Minutes per day">
+            <input id="minPerDay" class="wMin" type="number" min="0" step="1" value="60" />
+            <span class="unit">min</span>
+          </div>
+
+          <div class="field" title="Days per week">
+            <input id="daysPerWeek" class="wTiny" type="number" min="0" max="7" step="1" value="7" />
+            <span class="unit">days/wk</span>
+          </div>
+
+          <div class="field" title="Adherence %. 100 = always, 80 = most days, 50 = half.">
+            <input id="adherence" class="wTiny" type="number" min="0" max="100" step="1" value="100" />
+            <span class="unit">%</span>
+          </div>
+        </div>
+
+        <div class="small" id="saveHint">Based on Date above</div>
+        <div class="out" aria-live="polite">
+          <div class="labelRow wrap">
+            <span class="k" id="saveLead">—</span>
+          </div>
+          <div class="labelRow wrap" style="margin-top:1px;">
+            <span class="k" style="visibility:hidden;">—</span>
+            <span class="k" id="saveDays">—</span>
+          </div>
+          <div class="big" id="saveBig">—</div>
+          <div class="grid2">
+            <div class="stat">
+              <div class="t">Minutes saved</div>
+              <div class="n" id="saveMin">—</div>
+            </div>
+            <div class="stat">
+              <div class="t">Hours saved</div>
+              <div class="n" id="saveHours">—</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4) TIME WINDOW -->
+      <section class="card">
+        <div class="top">
+          <div class="h">Time Window</div>
+          <div class="status" id="winStatus"></div>
+        </div>
+
+        <div class="row nowrap">
+          <span class="tag">Countdown</span>
+
+          <div class="field" title="Hours">
+            <input id="winHours" class="wHours" type="number" min="0" step="0.5" value="14" />
+            <span class="unit">hours</span>
+          </div>
+
+          <button type="button" id="winStart">Start</button>
+          <button type="button" id="winPause">Pause</button>
+          <button type="button" id="winReset">Reset</button>
+        </div>
+
+        <div class="out" aria-live="polite">
+          <div class="labelRow">
+            <span class="k" id="winLead">—</span>
+            <span class="k" id="winEnds">—</span>
+          </div>
+          <div class="big" id="winBig">—</div>
+          <div class="small" id="winSmall">—</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const nowClock = $("nowClock");
+
+  // date
+  const dd = $("dd"), mm = $("mm"), yyyy = $("yyyy"), hhmm = $("hhmm");
+  const btnToday = $("btnToday"), btnNow = $("btnNow"), btnNextWeek=$("btnNextWeek"), btnNextMonth=$("btnNextMonth"), btnNextMon=$("btnNextMon"), btnFirstMon=$("btnFirstMon");
+  const dateStatus = $("dateStatus");
+  const dateLead = $("dateLead");
+  const dateStamp = $("dateStamp");
+  const dateBig = $("dateBig");
+  const dateSmall = $("dateSmall");
+
+  // interval
+  const fdd=$("fdd"), fmm=$("fmm"), fyyyy=$("fyyyy"), fhhmm=$("fhhmm");
+  const tdd=$("tdd"), tmm=$("tmm"), tyyyy=$("tyyyy"), thhmm=$("thhmm");
+  const btnIntSwap = $("btnIntSwap");
+  const intStatus = $("intStatus");
+  const intLead = $("intLead");
+  const intStamp = $("intStamp");
+  const intBig = $("intBig");
+  const intSmall = $("intSmall");
+
+  // savings
+  const minPerDay = $("minPerDay");
+  const daysPerWeek = $("daysPerWeek");
+  const adherence = $("adherence");
+  const saveStatus = $("saveStatus");
+  const saveLead = $("saveLead");
+  const saveDays = $("saveDays");
+  const saveBig = $("saveBig");
+  const saveMin = $("saveMin");
+  const saveHours = $("saveHours");
+
+  // window
+  const winHours = $("winHours");
+  const winStart = $("winStart");
+  const winPause = $("winPause");
+  const winReset = $("winReset");
+  const winStatus = $("winStatus");
+  const winLead = $("winLead");
+  const winEnds = $("winEnds");
+  const winBig = $("winBig");
+  const winSmall = $("winSmall");
+
+  const pad2 = (n) => String(n).padStart(2,"0");
+  const MS_DAY = 24*60*60*1000;
+
+  const WEEKDAY = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  function toNum(v){ const n = Number(v); return Number.isFinite(n) ? n : null; }
+  function clamp(v, lo, hi){
+    const n = toNum(v);
+    if(n === null) return lo;
+    return Math.min(hi, Math.max(lo, n));
+  }
+  function fmt(n, digits=2){
+    const a = Math.abs(Number(n));
+    if(!Number.isFinite(a)) return "0";
+    return a.toFixed(digits);
+  }
+  function fmtInt(n){ return Math.abs(Math.trunc(n)).toLocaleString("en-US"); }
+
+  function parseHHMM(s){
+    if(s === undefined || s === null) return {h:0,m:0, ok:true};
+    let t = String(s).trim();
+    if(t === "") return {h:0,m:0, ok:true};
+
+    // Accept HH:MM, HH:, H, HH, 930, 0930, etc.
+    if(t.includes(":")){
+      const m = t.match(/^\s*(\d{1,2})\s*:\s*(\d{0,2})\s*$/);
+      if(!m) return {h:0,m:0, ok:false};
+      const h = clamp(m[1], 0, 23);
+      const miRaw = (m[2] === "" ? "0" : m[2]);
+      const mi = clamp(miRaw, 0, 59);
+      return {h, m:mi, ok:true};
+    }
+
+    const digits = t.replace(/\D/g,"").slice(0,4);
+    if(digits.length === 0) return {h:0,m:0, ok:true};
+    if(digits.length <= 2){
+      const h = clamp(digits, 0, 23);
+      return {h, m:0, ok:true};
+    }
+    if(digits.length === 3){
+      const h = clamp(digits.slice(0,1), 0, 23);
+      const mi = clamp(digits.slice(1), 0, 59);
+      return {h, m:mi, ok:true};
+    }
+    const h = clamp(digits.slice(0,2), 0, 23);
+    const mi = clamp(digits.slice(2), 0, 59);
+    return {h, m:mi, ok:true};
+  }
+
+  function maskTimeInput(el){
+    if(!el) return;
+    const raw = String(el.value || "");
+    const digits = raw.replace(/\D/g,"").slice(0,4);
+    let out = "";
+    if(digits.length === 0){
+      out = "";
+    } else if(digits.length <= 2){
+      out = digits + (digits.length === 2 ? ":" : "");
+    } else if(digits.length === 3){
+      out = digits.slice(0,1) + ":" + digits.slice(1);
+    } else {
+      out = digits.slice(0,2) + ":" + digits.slice(2);
+    }
+    el.value = out;
+  }
+
+  function normalizeTimeOnBlur(el){
+    if(!el) return;
+    const t = parseHHMM(el.value);
+    if(!t.ok) return;
+    el.value = `${pad2(t.h)}:${pad2(t.m)}`;
+  }
+
+
+  function makeDate(d, m, y, hm){
+    if(String(d).trim()==="" || String(m).trim()==="" || String(y).trim()==="") return null;
+    const D = clamp(d, 1, 31);
+    const M = clamp(m, 1, 12);
+    const Y = clamp(y, 1, 9999);
+    const t = parseHHMM(hm);
+    if(!t.ok) return null;
+    const dt = new Date(Y, M-1, D, t.h, t.m, 0, 0);
+    if(dt.getFullYear() !== Y || (dt.getMonth()+1) !== M || dt.getDate() !== D) return null;
+    return dt;
+  }
+
+  function getTarget(){ return makeDate(dd.value, mm.value, yyyy.value, hhmm.value); }
+  function weekday(d){ return WEEKDAY[d.getDay()]; }
+  function stamp(d){
+    return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}.${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+
+  // calendar diff with display weeks
+  function calendarDiff(from, to){
+    let a = new Date(from.getTime());
+
+    let years = to.getFullYear() - a.getFullYear();
+    { const cand = new Date(a.getTime()); cand.setFullYear(a.getFullYear() + years); if(cand > to) years--; a.setFullYear(a.getFullYear() + years); }
+
+    let months = to.getMonth() - a.getMonth();
+    if(months < 0) months += 12;
+    { const cand = new Date(a.getTime()); cand.setMonth(a.getMonth() + months); if(cand > to){ months--; if(months < 0) months = 11; } a.setMonth(a.getMonth() + months); }
+
+    let days = Math.floor((to - a) / MS_DAY);
+    a = new Date(a.getTime() + days*MS_DAY);
+
+    const weeks = Math.floor(days / 7);
+    const dayRem = days % 7;
+
+    let rem = to - a;
+    const hours = Math.floor(rem / (60*60*1000)); rem -= hours*(60*60*1000);
+    const minutes = Math.floor(rem / (60*1000)); rem -= minutes*(60*1000);
+    const seconds = Math.floor(rem / 1000);
+
+    return {years, months, weeks, days: dayRem, hours, minutes, seconds};
+  }
+
+  function diffLine(diff){
+    const parts = [];
+    const add = (n, word) => {
+      if(!n) return;
+      parts.push(`${n} ${word}${n===1 ? "" : "s"}`);
+    };
+    add(diff.years, "year");
+    add(diff.months, "month");
+    add(diff.weeks, "week");
+    add(diff.days, "day");
+    parts.push(`${pad2(diff.hours)}:${pad2(diff.minutes)}:${pad2(diff.seconds)}`);
+    return parts.join(" ");
+  }
+
+  function totalClock(ms){
+    const s = Math.max(0, Math.floor(ms/1000));
+    const sec = s % 60;
+    const minAll = Math.floor(s/60);
+    const min = minAll % 60;
+    const hrAll = Math.floor(minAll/60);
+    const hr = hrAll % 24;
+    const day = Math.floor(hrAll/24);
+    return `${fmtInt(day)} days ${pad2(hr)}:${pad2(min)}:${pad2(sec)}`;
+  }
+
+  function computeSavings(horizonDays){
+    const mpd = Math.max(0, Number(minPerDay.value || 0));
+    const dpw = clamp(daysPerWeek.value, 0, 7);
+    const pPct = clamp(adherence.value, 0, 100);
+    const p = pPct / 100;
+
+    const effMinPerCalDay = mpd * (dpw/7) * p;
+    const totalMinutes = effMinPerCalDay * horizonDays;
+    const totalSeconds = totalMinutes * 60;
+
+    return { totalMinutes, totalSeconds };
+  }
+
+  // --- Time Window
+  const LS_END = "time_ledger_window_end";
+  const LS_REMAIN = "time_ledger_window_remain";
+  const LS_STATE = "time_ledger_window_state"; // idle | running | paused | done
+
+  function setWinState(state){
+    localStorage.setItem(LS_STATE, state);
+    winStatus.textContent = state === "idle" ? "" : state;
+    winPause.textContent = state === "paused" ? "Resume" : "Pause";
+  }
+
+  function startWindow(){
+    const h = Math.max(0, Number(winHours.value || 0));
+    const end = Date.now() + h * 60 * 60 * 1000;
+    localStorage.setItem(LS_END, String(end));
+    localStorage.removeItem(LS_REMAIN);
+    setWinState("running");
+    tick();
+  }
+
+  function pauseResumeWindow(){
+    const state = localStorage.getItem(LS_STATE) || "idle";
+    if(state === "running"){
+      const end = Number(localStorage.getItem(LS_END));
+      const remain = Math.max(0, end - Date.now());
+      localStorage.setItem(LS_REMAIN, String(remain));
+      localStorage.removeItem(LS_END);
+      setWinState(remain <= 0 ? "done" : "paused");
+      tick();
+      return;
+    }
+    if(state === "paused"){
+      const remain = Number(localStorage.getItem(LS_REMAIN));
+      if(!Number.isFinite(remain) || remain <= 0){
+        setWinState("done");
+        tick();
+        return;
+      }
+      const end = Date.now() + remain;
+      localStorage.setItem(LS_END, String(end));
+      localStorage.removeItem(LS_REMAIN);
+      setWinState("running");
+      tick();
+      return;
+    }
+  }
+
+  function resetWindow(){
+    localStorage.removeItem(LS_END);
+    localStorage.removeItem(LS_REMAIN);
+    setWinState("idle");
+    winLead.textContent = "Countdown";
+    winEnds.textContent = "—";
+    winBig.textContent = "—";
+    winSmall.textContent = "Press Start";
+  }
+
+  function updateWindow(now){
+    const state = localStorage.getItem(LS_STATE) || "idle";
+    const endStr = localStorage.getItem(LS_END);
+    const remainStr = localStorage.getItem(LS_REMAIN);
+
+    if(state === "idle" && !endStr && !remainStr){
+      winLead.textContent = "Countdown";
+      winEnds.textContent = "—";
+      winBig.textContent = "—";
+      winSmall.textContent = "Press Start";
+      return;
+    }
+
+    if(state === "paused" && remainStr){
+      const ms = Math.max(0, Number(remainStr));
+      winLead.textContent = "Paused";
+      winEnds.textContent = "—";
+      winBig.textContent = totalClock(ms);
+      winSmall.textContent = "Resume or Reset";
+      return;
+    }
+
+    if(endStr){
+      const end = Number(endStr);
+      const remaining = end - now.getTime();
+      if(remaining <= 0){
+        localStorage.removeItem(LS_END);
+        localStorage.removeItem(LS_REMAIN);
+        setWinState("done");
+        winLead.textContent = "Done";
+        winEnds.textContent = "—";
+        winBig.textContent = "00:00:00";
+        winSmall.textContent = "complete";
+        return;
+      }
+      setWinState("running");
+      winLead.textContent = "Remaining";
+      winEnds.textContent = `ends ${new Date(end).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+      winBig.textContent = totalClock(remaining);
+      winSmall.textContent = "Pause or Reset";
+      return;
+    }
+
+    if(state === "done"){
+      winLead.textContent = "Done";
+      winEnds.textContent = "—";
+      winBig.textContent = "00:00:00";
+      winSmall.textContent = "complete";
+      return;
+    }
+  }
+
+  // presets
+  function setToToday(d){
+    dd.value = pad2(d.getDate());
+    mm.value = pad2(d.getMonth()+1);
+    yyyy.value = String(d.getFullYear());
+    hhmm.value = "00:00";
+  }
+  function setToNow(d){
+    dd.value = pad2(d.getDate());
+    mm.value = pad2(d.getMonth()+1);
+    yyyy.value = String(d.getFullYear());
+    hhmm.value = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  }
+
+  function currentHHMMOrDefault(){
+    const t = parseHHMM(hhmm.value);
+    return t.ok ? `${pad2(t.h)}:${pad2(t.m)}` : "00:00";
+  }
+  function setToDateOnly(d, hhmmStr){
+    dd.value = pad2(d.getDate());
+    mm.value = pad2(d.getMonth()+1);
+    yyyy.value = String(d.getFullYear());
+    hhmm.value = hhmmStr || "00:00";
+  }
+  function addMonthsKeepDay(baseDate, months){
+    const y = baseDate.getFullYear();
+    const m = baseDate.getMonth() + months;
+    const day = baseDate.getDate();
+
+    // last day of target month:
+    const lastDay = new Date(y, m+1, 0).getDate();
+    const d = Math.min(day, lastDay);
+    return new Date(y, m, d, 0, 0, 0, 0);
+  }
+  function nextWeekSameDay(baseDate){
+    return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()+7, 0, 0, 0, 0);
+  }
+  function nextMonday(baseDate){
+    const dow = baseDate.getDay(); // 0 Sun .. 6 Sat
+    let add = (1 - dow + 7) % 7;
+    if(add === 0) add = 7;
+    return new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()+add, 0, 0, 0, 0);
+  }
+  function firstMondayOfNextMonth(baseDate){
+    const first = new Date(baseDate.getFullYear(), baseDate.getMonth()+1, 1, 0, 0, 0, 0);
+    const dow = first.getDay();
+    const add = (1 - dow + 7) % 7;
+    return new Date(first.getFullYear(), first.getMonth(), 1 + add, 0, 0, 0, 0);
+  }
+
+  btnToday.addEventListener("click", ()=> setToToday(new Date()));
+  btnNow.addEventListener("click", ()=> setToNow(new Date()));
+
+  btnNextWeek.addEventListener("click", ()=>{
+    const base = new Date();
+    setToDateOnly(nextWeekSameDay(base), currentHHMMOrDefault());
+    tick();
+  });
+  btnNextMonth.addEventListener("click", ()=>{
+    const base = new Date();
+    setToDateOnly(addMonthsKeepDay(base, 1), currentHHMMOrDefault());
+    tick();
+  });
+  btnNextMon.addEventListener("click", ()=>{
+    const base = new Date();
+    setToDateOnly(nextMonday(base), currentHHMMOrDefault());
+    tick();
+  });
+  btnFirstMon.addEventListener("click", ()=>{
+    const base = new Date();
+    setToDateOnly(firstMondayOfNextMonth(base), currentHHMMOrDefault());
+    tick();
+  });
+
+  btnIntSwap.addEventListener("click", ()=>{
+    const a = [fdd.value,fmm.value,fyyyy.value,fhhmm.value];
+    fdd.value=tdd.value; fmm.value=tmm.value; fyyyy.value=tyyyy.value; fhhmm.value=thhmm.value;
+    tdd.value=a[0]; tmm.value=a[1]; tyyyy.value=a[2]; thhmm.value=a[3];
+    tick();
+  });
+
+  winStart.addEventListener("click", startWindow);
+  winPause.addEventListener("click", pauseResumeWindow);
+  winReset.addEventListener("click", resetWindow);
+
+  document.querySelectorAll("input").forEach(el => {
+    el.addEventListener("input", tick);
+    el.addEventListener("change", tick);
+  });
+
+  // Time fields: auto-insert ":" on iOS numeric keyboard.
+  [hhmm, fhhmm, thhmm].forEach(el => {
+    if(!el) return;
+    el.addEventListener("input", () => maskTimeInput(el));
+    el.addEventListener("blur", () => { normalizeTimeOnBlur(el); tick(); });
+  });
+
+
+  function tick(){
+    const now = new Date();
+    nowClock.textContent = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+
+    // DATE (relative to now)
+    const target = getTarget();
+    if(!target){
+      dateStatus.textContent = "";
+      dateLead.textContent = "Enter a date";
+      dateStamp.textContent = "target —";
+      dateBig.textContent = "—";
+      dateSmall.textContent = "—";
+
+      saveStatus.textContent = "";
+      saveLead.textContent = "Set date above";
+      saveDays.textContent = "—";
+      saveBig.textContent = "—";
+      saveMin.textContent = "—";
+      saveHours.textContent = "—";
+    } else {
+      const ms = target.getTime() - now.getTime();
+      const future = ms > 0;
+      const absMs = Math.abs(ms);
+      const a = future ? now : target;
+      const b = future ? target : now;
+
+      const diff = calendarDiff(a, b);
+
+      dateStatus.textContent = future ? "future" : "past";
+      dateLead.textContent = future ? "Time remaining" : "Time elapsed";
+      dateStamp.textContent = `${weekday(target)} • ${stamp(target)}`;
+      dateBig.textContent = diffLine(diff);
+      dateSmall.textContent = `total: ${totalClock(absMs)} • ${fmtInt(Math.floor(absMs/1000))}s`;
+
+      const horizonDays = absMs / MS_DAY;
+      const s = computeSavings(horizonDays);
+      const dirText = future ? "Estimated savings (if consistent)" : "Estimated savings (if you had done it)";
+
+      saveStatus.textContent = future ? "until" : "since";
+      saveLead.textContent = dirText;
+      saveDays.textContent = `interval: ${fmt(horizonDays,2)} days (${fmt(horizonDays*24,1)} h)`;
+      saveBig.textContent = totalClock(s.totalSeconds*1000);
+
+      const hours = s.totalMinutes / 60;
+      saveMin.textContent = `${fmtInt(s.totalMinutes)} min`;
+      saveHours.textContent = `${fmt(hours,2)} h`;
+    }
+
+    // TIME INTERVAL (between two arbitrary dates)
+    const from = makeDate(fdd.value,fmm.value,fyyyy.value,fhhmm.value);
+    const to   = makeDate(tdd.value,tmm.value,tyyyy.value,thhmm.value);
+
+    if(!from || !to){
+      intStatus.textContent = "";
+      intLead.textContent = "Enter From / To";
+      intStamp.textContent = "—";
+      intBig.textContent = "—";
+      intSmall.textContent = "—";
+    } else {
+      const ms2 = to.getTime() - from.getTime();
+      const forward = ms2 >= 0;
+      const abs2 = Math.abs(ms2);
+
+      const a2 = forward ? from : to;
+      const b2 = forward ? to : from;
+
+      const d2 = calendarDiff(a2, b2);
+
+      intStatus.textContent = forward ? "forward" : "backward";
+      intLead.textContent = "Difference";
+      intStamp.textContent = `${weekday(from)}→${weekday(to)}`;
+
+      intBig.textContent = diffLine(d2);
+      intSmall.textContent = `total: ${totalClock(abs2)} • ${fmtInt(Math.floor(abs2/1000))}s`;
+    }
+
+    updateWindow(now);
+  }
+
+  // init
+  const d0 = new Date();
+  setToToday(d0);
+
+  // interval defaults: today 00:00 -> today 23:59
+  fdd.value = pad2(d0.getDate());
+  fmm.value = pad2(d0.getMonth()+1);
+  fyyyy.value = String(d0.getFullYear());
+  fhhmm.value = "00:00";
+
+  tdd.value = pad2(d0.getDate());
+  tmm.value = pad2(d0.getMonth()+1);
+  tyyyy.value = String(d0.getFullYear());
+  thhmm.value = "23:59";
+
+  if(!localStorage.getItem(LS_STATE)) setWinState("idle"); else setWinState(localStorage.getItem(LS_STATE));
+  tick();
+  setInterval(tick, 250);
+})();
+</script>
+</body>
+</html>
